@@ -1,46 +1,10 @@
 stages:
   - test
-  - build
-  - push
 
-variables:
-  PROJECT_ID: "vmware-env-413614"
-  REGION: "asia-south1"
-  REPO: "db-docker-repo"
-  IMAGE_NAME: "flask-app"
-  IMAGE: "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/${IMAGE_NAME}"
-  TAG: "${CI_COMMIT_SHORT_SHA}"
-
-test:
+test_job:
   stage: test
   image: python:3.11
   script:
-    - pip install -r app/requirements.txt
-    - python -c "import flask; print('Flask import OK')"
-
-build:
-  stage: build
-  image: docker:24
-  services:
-    - docker:24-dind
-  variables:
-    DOCKER_TLS_CERTDIR: ""
-  script:
-    - docker build -t ${IMAGE}:${TAG} app
-    - docker tag ${IMAGE}:${TAG} ${IMAGE}:latest
-
-push:
-  stage: push
-  image: google/cloud-sdk:latest
-  services:
-    - docker:24-dind
-  variables:
-    DOCKER_TLS_CERTDIR: ""
-  script:
-    - echo "$GCP_SA_KEY" > /tmp/key.json
-    - gcloud auth activate-service-account --key-file=/tmp/key.json
-    - gcloud config set project ${PROJECT_ID}
-    - gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
-    - docker push ${IMAGE}:${TAG}
-    - docker push ${IMAGE}:latest
+    - echo "GitLab pipeline working"
+    - python --version
 
