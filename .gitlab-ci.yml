@@ -1,3 +1,25 @@
+stages:
+  - test
+  - build
+  - push
+
+variables:
+  PROJECT_ID: "vmware-env-413614"
+  REGION: "asia-south1"
+  REPO: "db-docker-repo"
+  IMAGE_NAME: "flask-app"
+  IMAGE: "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/${IMAGE_NAME}"
+  TAG: "${CI_COMMIT_SHORT_SHA}"
+
+test_job:
+  stage: test
+  tags:
+    - docker
+  image: python:3.11
+  script:
+    - echo "GitLab pipeline working"
+    - python --version
+
 build_job:
   stage: build
   tags:
