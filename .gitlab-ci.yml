@@ -1,10 +1,31 @@
-stages:
-  - test
-
-test_job:
-  stage: test
-  image: python:3.11
+build_job:
+  stage: build
+  tags:
+    - docker
+  image: docker:24
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""
   script:
-    - echo "GitLab pipeline working"
-    - python --version
+    - docker version
+    - docker build -t ${IMAGE}:${TAG} app
+    - docker tag ${IMAGE}:${TAG} ${IMAGE}:latest
+
+push_job:
+  stage: push
+  tags:
+    - docker
+  image: google/cloud-sdk:latest
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+  script:
+    - echo "$GCP_SA_KEY" > /tmp/key.json
+    - gcloud auth activate-service-account --key-file=/tmp/key.json
+    - gcloud config set project ${PROJECT_ID}
+    - gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
+    - docker push ${IMAGE}:${TAG}
+    - docker push ${IMAGE}:latest
 
