@@ -1,0 +1,54 @@
+stages:
+  - test
+  - build
+  - push
+  - update-manifest
+
+variables:
+  PROJECT_ID: "vmware-env-413614"
+  REGION: "asia-south1"
+  REPO: "db-docker-repo"
+  IMAGE_NAME: "flask-app"
+  IMAGE: "$REGION-docker.pkg.dev/$PROJECT_ID/$REPO/$IMAGE_NAME"
+  TAG: "$CI_COMMIT_SHORT_SHA"
+
+test:
+  stage: test
+  image: python:3.11
+  script:
+    - pip install -r app/requirements.txt
+    - python -c "import flask; print('Flask import OK')"
+
+build:
+  stage: build
+  image: docker:24
+  services:
+    - docker:24-dind
+  script:
+    - docker build -t $IMAGE:$TAG app
+    - docker tag $IMAGE:$TAG $IMAGE:latest
+
+push:
+  stage: push
+  image: google/cloud-sdk:latest
+  script:
+    - echo "$GCP_SA_KEY" > /tmp/key.json
+    - gcloud auth activate-service-account --key-file=/tmp/key.json
+    - gcloud config set project $PROJECT_ID
+    - gcloud auth configure-docker $REGION-docker.pkg.dev --quiet
+    - docker push $IMAGE:$TAG
+    - docker push $IMAGE:latest
+
+update-manifest:
+  stage: update-manifest
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache git bash
+  script:
+    - sed -i "s|image: .*flask-app:.*|image: $IMAGE:$TAG|g" k8s/flask-deploy.yaml
+    - git config --global user.email "ci@db.com"
+    - git config --global user.name "gitlab-ci"
+    - git add k8s/flask-deploy.yaml
+    - git commit -m "Update flask image to $TAG"
+    - git push https://$GIT_USER:$GIT_TOKEN@github.com/praphullaprakash/devops-db-lab.git main
+
