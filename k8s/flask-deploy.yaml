@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: flask-app
-        image: asia-south1-docker.pkg.dev/vmware-env-413614/db-docker-repo/flask-app:v1
+        image: asia-south1-docker.pkg.dev/vmware-env-413614/db-docker-repo/flask-app:v2
         ports:
         - containerPort: 5000
 
